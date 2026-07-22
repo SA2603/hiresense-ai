@@ -105,3 +105,31 @@ def get_resumes_for_user(user_id: int) -> list:
     ).fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def save_job_description(user_id: int, raw_text: str, company_name: str = None, role_title: str = None) -> int:
+    """
+    Inserts a new job description row for a given user.
+    Returns the new jd_id.
+    """
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO job_descriptions (user_id, raw_text, company_name, role_title) VALUES (?, ?, ?, ?)",
+        (user_id, raw_text, company_name, role_title)
+    )
+    conn.commit()
+    jd_id = cursor.lastrowid
+    conn.close()
+    return jd_id
+
+
+def get_job_descriptions_for_user(user_id: int) -> list:
+    """
+    Returns all JDs a user has saved, most recent first.
+    """
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM job_descriptions WHERE user_id = ? ORDER BY uploaded_at DESC",
+        (user_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
