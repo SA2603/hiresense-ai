@@ -1,6 +1,7 @@
 import sqlite3
 import bcrypt
 import os
+import json
 from datetime import datetime
 
 # Path to the actual database file - it will be created automatically on first run
@@ -72,3 +73,35 @@ def verify_user(username: str, password: str):
     if bcrypt.checkpw(password.encode("utf-8"), stored_hash):
         return dict(row)  # convert sqlite3.Row to a plain dict
     return None  # password didn't match
+
+
+def save_resume(user_id: int, filename: str, raw_text: str, parsed_data: dict = None) -> int:
+    """
+    Inserts a new resume row for a given user.
+    parsed_data is a dict (we'll start using this properly in Stage 4) -
+    stored as a JSON string since SQLite has no native dict/list type.
+    Returns the new resume_id.
+    """
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO resumes (user_id, filename, raw_text, parsed_data) VALUES (?, ?, ?, ?)",
+        (user_id, filename, raw_text, json.dumps(parsed_data) if parsed_data else None)
+    )
+    conn.commit()
+    resume_id = cursor.lastrowid  # SQLite tells us the auto-generated ID of the row we just inserted
+    conn.close()
+    return resume_id
+
+
+def get_resumes_for_user(user_id: int) -> list:
+    """
+    Returns all resumes a user has uploaded, most recent first.
+    Used later for the dashboard/history feature.
+    """
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM resumes WHERE user_id = ? ORDER BY uploaded_at DESC",
+        (user_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
