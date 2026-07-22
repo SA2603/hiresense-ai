@@ -27,3 +27,6 @@ venv/
 __pycache__/
 *.pyc
 .env
+
+tests/fixtures/*.pdf
+tests/fixtures/*.docx
