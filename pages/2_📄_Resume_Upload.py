@@ -1,17 +1,20 @@
 import streamlit as st
 import sys
 import os
+import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "database"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "utils"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml_models"))
 
-from database.db_utils import save_resume, get_resumes_for_user
-from utils.text_extraction import extract_text
-from utils.auth_guard import require_login
+from db_utils import save_resume, get_resumes_for_user
+from text_extraction import extract_text
+from auth_guard import require_login
+from resume_parser import parse_resume
 
 st.set_page_config(page_title="Resume Upload - HireSense AI", page_icon="📄")
 
-require_login()  # blocks anyone not logged in - everything below only runs if logged in
+require_login()
 
 st.title("📄 Upload Your Resume")
 st.write("Upload a PDF or DOCX resume to get started with analysis.")
@@ -30,20 +33,53 @@ if uploaded_file is not None:
             st.error(str(e))
             st.stop()
 
-    st.success(f"Successfully extracted text from **{uploaded_file.name}**")
+    with st.spinner("Parsing resume content..."):
+        parsed = parse_resume(extracted_text)
 
-    # Show a preview so the user can sanity-check the extraction worked well
-    with st.expander("📋 Preview extracted text", expanded=True):
+    st.success(f"Successfully processed **{uploaded_file.name}**")
+
+    # --- DASHBOARD DISPLAY ---
+    st.subheader("📊 Parsed Resume Dashboard")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Name", parsed["name"] or "Not detected")
+    col2.metric("Email", parsed["email"] or "Not detected")
+    col3.metric("Phone", parsed["phone"] or "Not detected")
+
+    st.markdown("### 🛠️ Skills Detected")
+    if parsed["skills"]:
+        # Display skills as nice pill-style tags using columns
+        skill_cols = st.columns(4)
+        for i, skill in enumerate(parsed["skills"]):
+            skill_cols[i % 4].markdown(f"`{skill}`")
+    else:
+        st.info("No skills detected from our known skills list.")
+
+    with st.expander("🎓 Education"):
+        st.write(parsed["education"] or "No education section detected.")
+
+    with st.expander("💼 Experience"):
+        st.write(parsed["experience"] or "No experience section detected.")
+
+    with st.expander("🚀 Projects"):
+        st.write(parsed["projects"] or "No projects section detected.")
+
+    with st.expander("📜 Certifications"):
+        st.write(parsed["certifications"] or "No certifications section detected.")
+
+    with st.expander("📋 Raw extracted text (full)"):
         st.text_area("Extracted content", extracted_text, height=300, disabled=True)
 
     if st.button("💾 Save this resume"):
         resume_id = save_resume(
             user_id=st.session_state.user_id,
             filename=uploaded_file.name,
-            raw_text=extracted_text
+            raw_text=extracted_text,
+            parsed_data=parsed
         )
         st.session_state.current_resume_id = resume_id
         st.session_state.current_resume_text = extracted_text
+        st.session_state.current_parsed_data = parsed
         st.success(f"Resume saved! (ID: {resume_id}) You can now proceed to analysis.")
 
 st.divider()
@@ -56,8 +92,13 @@ if not past_resumes:
 else:
     for resume in past_resumes:
         with st.expander(f"{resume['filename']} — uploaded {resume['uploaded_at']}"):
+            if resume["parsed_data"]:
+                parsed_saved = json.loads(resume["parsed_data"])
+                st.write(f"**Name:** {parsed_saved.get('name', 'N/A')}")
+                st.write(f"**Email:** {parsed_saved.get('email', 'N/A')}")
+                st.write(f"**Skills:** {', '.join(parsed_saved.get('skills', [])) or 'None detected'}")
             st.text_area(
-                "Content",
+                "Raw content",
                 resume["raw_text"][:1000] + ("..." if len(resume["raw_text"]) > 1000 else ""),
                 height=150,
                 disabled=True,
