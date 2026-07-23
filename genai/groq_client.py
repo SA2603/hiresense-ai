@@ -28,3 +28,40 @@ def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.7) -> 
         max_tokens=1500
     )
     return response.choices[0].message.content
+
+def parse_structured_review(review_text: str) -> dict:
+    """
+    Splits the LLM's structured response into separate fields based on
+    our ### SECTION_NAME markers from the prompt.
+    Returns a dict with keys: strengths, weaknesses, formatting_suggestions,
+    grammar_suggestions, keyword_suggestions, recruiter_feedback.
+    """
+    sections = {
+        "strengths": "",
+        "weaknesses": "",
+        "formatting_suggestions": "",
+        "grammar_suggestions": "",
+        "keyword_suggestions": "",
+        "recruiter_feedback": ""
+    }
+
+    section_markers = {
+        "### STRENGTHS": "strengths",
+        "### WEAKNESSES": "weaknesses",
+        "### FORMATTING_SUGGESTIONS": "formatting_suggestions",
+        "### GRAMMAR_SUGGESTIONS": "grammar_suggestions",
+        "### KEYWORD_SUGGESTIONS": "keyword_suggestions",
+        "### RECRUITER_FEEDBACK": "recruiter_feedback"
+    }
+
+    current_key = None
+    for line in review_text.split("\n"):
+        stripped = line.strip()
+        if stripped in section_markers:
+            current_key = section_markers[stripped]
+            continue
+        if current_key:
+            sections[current_key] += line + "\n"
+
+    # Clean up trailing whitespace on each section
+    return {key: value.strip() for key, value in sections.items()}
