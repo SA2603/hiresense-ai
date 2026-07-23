@@ -133,3 +133,81 @@ def get_job_descriptions_for_user(user_id: int) -> list:
     ).fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def save_analysis(user_id: int, resume_id: int, jd_id: int = None,
+                   ats_score: float = None, ats_breakdown: dict = None,
+                   similarity_score: float = None, missing_skills: list = None,
+                   matched_skills: list = None, ai_review: str = None,
+                   interview_questions: list = None, cover_letter: str = None,
+                   career_recommendations: dict = None) -> int:
+    """
+    Inserts a new analysis row. Every field except user_id and resume_id
+    is optional, since analysis happens incrementally across several
+    pages (ATS score first, then similarity, then AI review, etc.) -
+    we'll UPDATE this row as more data becomes available (see update_analysis below).
+    Returns the new analysis_id.
+    """
+    conn = get_connection()
+    cursor = conn.execute(
+        """INSERT INTO analyses
+           (user_id, resume_id, jd_id, ats_score, ats_breakdown, similarity_score,
+            missing_skills, matched_skills, ai_review, interview_questions,
+            cover_letter, career_recommendations)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (user_id, resume_id, jd_id, ats_score,
+         json.dumps(ats_breakdown) if ats_breakdown else None,
+         similarity_score,
+         json.dumps(missing_skills) if missing_skills else None,
+         json.dumps(matched_skills) if matched_skills else None,
+         ai_review,
+         json.dumps(interview_questions) if interview_questions else None,
+         cover_letter,
+         json.dumps(career_recommendations) if career_recommendations else None)
+    )
+    conn.commit()
+    analysis_id = cursor.lastrowid
+    conn.close()
+    return analysis_id
+
+
+def update_analysis(analysis_id: int, **fields) -> None:
+    """
+    Updates specific fields of an existing analysis row.
+    Usage: update_analysis(5, ai_review="...", interview_questions=[...])
+    JSON-serializable fields (dicts/lists) are automatically converted.
+    """
+    if not fields:
+        return
+
+    json_fields = {"ats_breakdown", "missing_skills", "matched_skills",
+                    "interview_questions", "career_recommendations"}
+
+    set_clauses = []
+    values = []
+    for key, value in fields.items():
+        set_clauses.append(f"{key} = ?")
+        if key in json_fields and value is not None:
+            values.append(json.dumps(value))
+        else:
+            values.append(value)
+
+    values.append(analysis_id)  # for the WHERE clause
+
+    conn = get_connection()
+    conn.execute(
+        f"UPDATE analyses SET {', '.join(set_clauses)} WHERE analysis_id = ?",
+        values
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_analyses_for_user(user_id: int) -> list:
+    """Returns all analyses for a user, most recent first."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM analyses WHERE user_id = ? ORDER BY created_at DESC",
+        (user_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
