@@ -2,8 +2,8 @@ import sys
 sys.path.append("ml_models")
 sys.path.append("utils")
 
-from resume_parser import parse_resume
-from text_extraction import extract_text_from_pdf
+from ml_models.resume_parser import parse_resume
+from utils.text_extraction import extract_text_from_pdf
 
 with open("sample_resume.pdf", "rb") as f:
     pdf_bytes = f.read()
