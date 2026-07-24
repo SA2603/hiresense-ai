@@ -21,4 +21,13 @@ output_path = generate_report(
     output_path="test_output_report.pdf"
 )
 
-print(f"Report generated at: {output_path}")
+pdf_bytes = generate_report(
+    parsed_data=parsed,
+    ats_result=ats_result,
+    similarity_score=78.5
+)
+
+with open("test_output_report.pdf", "wb") as f:
+    f.write(pdf_bytes)
+
+print("Report generated: test_output_report.pdf")

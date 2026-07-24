@@ -46,8 +46,7 @@ def _add_body_text(pdf: ReportPDF, text: str):
 
 def generate_report(parsed_data: dict, ats_result: dict, similarity_score: float = None,
                      skill_gap_result: dict = None, ai_review: dict = None,
-                     interview_questions: dict = None, career_recommendations: dict = None,
-                     output_path: str = "report.pdf") -> str:
+                     interview_questions: dict = None, career_recommendations: dict = None) -> bytes:
     """
     Compiles all analysis results into a single downloadable PDF report.
     Any argument can be None if that feature wasn't run - the report
@@ -130,5 +129,4 @@ def generate_report(parsed_data: dict, ats_result: dict, similarity_score: float
             for phase in roadmap:
                 _add_body_text(pdf, f"  {phase['phase']}: {phase['focus']}")
 
-    pdf.output(output_path)
-    return output_path
+    return bytes(pdf.output())
