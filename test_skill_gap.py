@@ -1,7 +1,7 @@
 import sys
 sys.path.append("ml_models")
 
-from skill_gap import analyze_skill_gap, recommend_skills_to_learn
+from ml_models.skill_gap import analyze_skill_gap, recommend_skills_to_learn
 
 resume_text = """
 Experienced software engineer skilled in Python, SQL, and Git.

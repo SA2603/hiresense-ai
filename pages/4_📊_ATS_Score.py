@@ -6,9 +6,9 @@ import plotly.graph_objects as go
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "database"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml_models"))
 
-from db_utils import save_analysis
-from ats_scorer import calculate_ats_score
-from auth_guard import require_login
+from database.db_utils import save_analysis
+from ml_models.ats_scorer import calculate_ats_score
+from utils.auth_guard import require_login
 
 st.set_page_config(page_title="ATS Score - HireSense AI", page_icon="📊")
 
