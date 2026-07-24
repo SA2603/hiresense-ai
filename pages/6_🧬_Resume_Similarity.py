@@ -48,19 +48,7 @@ if st.button("🧬 Calculate Similarity"):
 if "current_similarity_score" in st.session_state:
     similarity = st.session_state.current_similarity_score
 
-    gauge_color = "#2ecc71" if similarity >= 70 else "#f39c12" if similarity >= 45 else "#e74c3c"
-
-    fig_gauge = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=similarity,
-        number={"suffix": "%"},
-        gauge={
-            "axis": {"range": [0, 100]},
-            "bar": {"color": gauge_color},
-        },
-        title={"text": "Semantic Similarity"}
-    ))
-    fig_gauge.update_layout(height=300, margin=dict(t=50, b=10, l=30, r=30))
+ fig_gauge = make_gauge_chart(similarity, "Semantic Similarity", suffix="%", thresholds=(45, 70))
     st.plotly_chart(fig_gauge, use_container_width=True)
 
     if similarity >= 70:

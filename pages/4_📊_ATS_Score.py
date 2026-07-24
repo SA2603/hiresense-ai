@@ -1,7 +1,6 @@
 import streamlit as st
 import sys
 import os
-import plotly.graph_objects as go
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "database"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml_models"))
@@ -9,6 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml_models"))
 from database.db_utils import save_analysis
 from ml_models.ats_scorer import calculate_ats_score
 from utils.auth_guard import require_login
+from utils.chart_helpers import make_gauge_chart, make_breakdown_bar_chart
 
 st.set_page_config(page_title="ATS Score - HireSense AI", page_icon="📊")
 
@@ -52,24 +52,7 @@ if "current_ats_result" in st.session_state:
     breakdown = result["breakdown"]
 
     # --- CIRCULAR PROGRESS (GAUGE) CHART ---
-    gauge_color = "#2ecc71" if overall >= 70 else "#f39c12" if overall >= 50 else "#e74c3c"
-
-    fig_gauge = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=overall,
-        number={"suffix": " / 100"},
-        gauge={
-            "axis": {"range": [0, 100]},
-            "bar": {"color": gauge_color},
-            "steps": [
-                {"range": [0, 50], "color": "#fdecea"},
-                {"range": [50, 70], "color": "#fdf3e0"},
-                {"range": [70, 100], "color": "#eafaf1"}
-            ],
-        },
-        title={"text": "Overall ATS Score"}
-    ))
-    fig_gauge.update_layout(height=350, margin=dict(t=50, b=10, l=30, r=30))
+    fig_gauge = make_gauge_chart(overall, "Overall ATS Score", suffix=" / 100", thresholds=(50, 70))
     st.plotly_chart(fig_gauge, use_container_width=True)
 
     # Interpretation message
@@ -95,19 +78,7 @@ if "current_ats_result" in st.session_state:
     labels = [category_labels[k] for k in breakdown.keys()]
     values = list(breakdown.values())
 
-    fig_bar = go.Figure(go.Bar(
-        x=values,
-        y=labels,
-        orientation="h",
-        marker_color=["#2ecc71" if v >= 70 else "#f39c12" if v >= 50 else "#e74c3c" for v in values],
-        text=[f"{v}" for v in values],
-        textposition="outside"
-    ))
-    fig_bar.update_layout(
-        xaxis=dict(range=[0, 100], title="Score"),
-        height=350,
-        margin=dict(t=20, b=20, l=20, r=20)
-    )
+    fig_bar = make_breakdown_bar_chart(labels, values)
     st.plotly_chart(fig_bar, use_container_width=True)
 
     with st.expander("ℹ️ How is this score calculated?"):
