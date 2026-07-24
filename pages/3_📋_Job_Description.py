@@ -64,6 +64,8 @@ if st.button("💾 Save job description"):
         )
         st.session_state.current_jd_id = jd_id
         st.session_state.current_jd_text = jd_text
+        st.session_state.current_jd_company = company_name or ""
+        st.session_state.current_jd_role = role_title or ""
         st.success(f"Job description saved! (ID: {jd_id})")
 
 st.divider()
