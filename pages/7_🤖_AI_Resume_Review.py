@@ -9,11 +9,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "prompts"))
 from db_utils import update_analysis
 from groq_client import call_llm, parse_structured_review
 from resume_review_prompts import build_resume_review_prompt
-from auth_guard import require_login
-
+from auth_guard import require_login, render_sidebar_reset_button
 st.set_page_config(page_title="AI Resume Review - HireSense AI", page_icon="🤖")
 
 require_login()
+render_sidebar_reset_button()
 
 st.title("🤖 AI Resume Review")
 st.write(
@@ -39,16 +39,20 @@ if st.button("🤖 Generate AI Review"):
             st.session_state.current_resume_text,
             jd_text
         )
-        raw_response = call_llm(system_prompt, user_prompt, temperature=0.5)
-        parsed_review = parse_structured_review(raw_response)
+        try:
+            raw_response = call_llm(system_prompt, user_prompt, temperature=0.5)
+            parsed_review = parse_structured_review(raw_response)
 
-        st.session_state.current_ai_review = parsed_review
+            st.session_state.current_ai_review = parsed_review
 
-        if "current_analysis_id" in st.session_state:
-            update_analysis(
-                st.session_state.current_analysis_id,
-                ai_review=raw_response  # store the full raw text in the DB
-            )
+            if "current_analysis_id" in st.session_state:
+                update_analysis(
+                    st.session_state.current_analysis_id,
+                    ai_review=raw_response
+                )
+        except RuntimeError as e:
+            st.error(f"⚠️ {str(e)}")
+            st.info("Please try again in a moment.")
 
 if "current_ai_review" in st.session_state:
     review = st.session_state.current_ai_review

@@ -9,11 +9,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "prompts"))
 from db_utils import update_analysis
 from groq_client import call_llm, parse_json_response
 from interview_prompts import build_interview_questions_prompt
-from auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 
 st.set_page_config(page_title="Interview Questions - HireSense AI", page_icon="🎤")
 
 require_login()
+render_sidebar_reset_button()
 
 st.title("🎤 AI Interview Question Generator")
 st.write(
@@ -40,25 +41,31 @@ if st.button("🎤 Generate Interview Questions"):
             st.session_state.current_resume_text,
             jd_text
         )
-        raw_response = call_llm(system_prompt, user_prompt, temperature=0.6)
 
         try:
-            parsed_questions = parse_json_response(raw_response)
-            st.session_state.current_interview_questions = parsed_questions
+            raw_response = call_llm(system_prompt, user_prompt, temperature=0.6)
 
-            if "current_analysis_id" in st.session_state:
-                update_analysis(
-                    st.session_state.current_analysis_id,
-                    interview_questions=parsed_questions
+            try:
+                parsed_questions = parse_json_response(raw_response)
+                st.session_state.current_interview_questions = parsed_questions
+
+                if "current_analysis_id" in st.session_state:
+                    update_analysis(
+                        st.session_state.current_analysis_id,
+                        interview_questions=parsed_questions
+                    )
+            except Exception as e:
+                st.error(
+                    "⚠️ Something went wrong generating questions in the expected "
+                    "format. Please try again."
                 )
-        except Exception as e:
-            st.error(
-                "⚠️ Something went wrong generating questions in the expected "
-                "format. Please try again."
-            )
-            with st.expander("Technical details (for debugging)"):
-                st.code(str(e))
-                st.text(raw_response)
+                with st.expander("Technical details (for debugging)"):
+                    st.code(str(e))
+                    st.text(raw_response)
+
+        except RuntimeError as e:
+            st.error(f"⚠️ {str(e)}")
+            st.info("Please try again in a moment.")
 
 if "current_interview_questions" in st.session_state:
     questions = st.session_state.current_interview_questions

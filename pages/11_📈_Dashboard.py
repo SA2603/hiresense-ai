@@ -7,12 +7,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "database"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "utils"))
 
 from database.db_utils import get_full_analysis_history
-from utils.auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 from utils.chart_helpers import make_gauge_chart
 
 st.set_page_config(page_title="Dashboard - HireSense AI", page_icon="📈", layout="wide")
-
 require_login()
+render_sidebar_reset_button()
 
 st.title("📈 Your Dashboard")
 st.write(f"Welcome back, **{st.session_state.username}**")

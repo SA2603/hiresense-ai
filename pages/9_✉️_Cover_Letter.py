@@ -9,11 +9,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "prompts"))
 from db_utils import update_analysis
 from groq_client import call_llm
 from cover_letter_prompts import build_cover_letter_prompt
-from auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 
 st.set_page_config(page_title="Cover Letter - HireSense AI", page_icon="✉️")
 
 require_login()
+render_sidebar_reset_button()
 
 st.title("✉️ AI Cover Letter Generator")
 st.write("Generate a personalized cover letter based on your resume and a specific job description.")
@@ -56,43 +57,19 @@ if st.button("✉️ Generate Cover Letter"):
                 company_name,
                 role_title
             )
-            cover_letter = call_llm(system_prompt, user_prompt, temperature=0.8)
-            st.session_state.current_cover_letter = cover_letter
+            try:
+                cover_letter = call_llm(system_prompt, user_prompt, temperature=0.8)
+                st.session_state.current_cover_letter = cover_letter
 
-            if "current_analysis_id" in st.session_state:
-                update_analysis(
-                    st.session_state.current_analysis_id,
-                    cover_letter=cover_letter
-                )
+                if "current_analysis_id" in st.session_state:
+                    update_analysis(
+                        st.session_state.current_analysis_id,
+                        cover_letter=cover_letter
+                    )
+            except RuntimeError as e:
+                st.error(f"⚠️ {str(e)}")
+                st.info("Please try again in a moment.")
 
 if "current_cover_letter" in st.session_state:
     st.divider()
     st.subheader("📄 Your Cover Letter")
-
-    st.text_area(
-        "Generated cover letter (editable — feel free to tweak it before using)",
-        st.session_state.current_cover_letter,
-        height=400
-    )
-
-    word_count = len(st.session_state.current_cover_letter.split())
-    st.caption(f"Word count: {word_count}")
-
-    st.download_button(
-        label="⬇️ Download as .txt",
-        data=st.session_state.current_cover_letter,
-        file_name=f"cover_letter_{company_name.replace(' ', '_') or 'draft'}.txt",
-        mime="text/plain"
-    )
-
-    if st.button("🔄 Regenerate"):
-        with st.spinner("Writing a new version..."):
-            system_prompt, user_prompt = build_cover_letter_prompt(
-                st.session_state.current_resume_text,
-                st.session_state.current_jd_text,
-                company_name,
-                role_title
-            )
-            new_letter = call_llm(system_prompt, user_prompt, temperature=0.9)
-            st.session_state.current_cover_letter = new_letter
-            st.rerun()

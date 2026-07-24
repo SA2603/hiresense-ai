@@ -8,11 +8,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml_models"))
 
 from db_utils import update_analysis
 from similarity_scorer import calculate_similarity
-from auth_guard import require_login
-
+from auth_guard import require_login, render_sidebar_reset_button
 st.set_page_config(page_title="Resume Similarity - HireSense AI", page_icon="🧬")
 
 require_login()
+render_sidebar_reset_button()
 
 st.title("🧬 Resume ↔ Job Description Similarity")
 st.write(

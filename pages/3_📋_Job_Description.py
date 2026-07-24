@@ -7,11 +7,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "utils"))
 
 from database.db_utils import save_job_description, get_job_descriptions_for_user
 from utils.text_extraction import extract_text
-from utils.auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 
 st.set_page_config(page_title="Job Description - HireSense AI", page_icon="📋")
 
 require_login()
+render_sidebar_reset_button()
 
 st.title("📋 Add a Job Description (Optional)")
 st.write(

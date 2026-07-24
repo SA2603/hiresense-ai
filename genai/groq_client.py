@@ -13,23 +13,25 @@ MODEL_NAME = "llama-3.1-8b-instant"
 
 def call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.7) -> str:
     """
-    The core function every GenAI feature will call.
-    system_prompt: sets the AI's role/persona/instructions (sent once, sets context)
-    user_prompt: the actual request/content for this specific call
-    temperature: controls randomness (0 = very consistent/deterministic,
-                 1 = more creative/varied) - we'll tune this per use case
-    Returns the model's text response as a plain string.
+    Calls the Groq LLM API. Raises a clear, user-friendly RuntimeError
+    if the API call itself fails (network issues, rate limits, etc.),
+    rather than letting a raw library exception bubble up uncaught.
     """
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        temperature=temperature,
-        max_tokens=1500
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=temperature,
+            max_tokens=1500
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        raise RuntimeError(
+            f"The AI service is currently unavailable or an error occurred: {str(e)}"
+        )
 
 def parse_structured_review(review_text: str) -> dict:
     """

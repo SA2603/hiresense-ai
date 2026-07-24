@@ -9,11 +9,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "prompts"))
 from db_utils import update_analysis
 from groq_client import call_llm, parse_json_response
 from career_recommendation_prompts import build_career_recommendations_prompt
-from auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 
 st.set_page_config(page_title="Career Recommendations - HireSense AI", page_icon="🚀")
 
 require_login()
+render_sidebar_reset_button()
 
 st.title("🚀 Career Recommendations")
 st.write(
@@ -55,22 +56,28 @@ if st.button("🚀 Generate Recommendations"):
             missing_skills=missing_skills_list if missing_skills_list else None,
             jd_text=jd_text
         )
-        raw_response = call_llm(system_prompt, user_prompt, temperature=0.6)
 
         try:
-            parsed = parse_json_response(raw_response)
-            st.session_state.current_career_recommendations = parsed
+            raw_response = call_llm(system_prompt, user_prompt, temperature=0.6)
 
-            if "current_analysis_id" in st.session_state:
-                update_analysis(
-                    st.session_state.current_analysis_id,
-                    career_recommendations=parsed
-                )
-        except Exception as e:
-            st.error("⚠️ Something went wrong generating recommendations. Please try again.")
-            with st.expander("Technical details (for debugging)"):
-                st.code(str(e))
-                st.text(raw_response)
+            try:
+                parsed = parse_json_response(raw_response)
+                st.session_state.current_career_recommendations = parsed
+
+                if "current_analysis_id" in st.session_state:
+                    update_analysis(
+                        st.session_state.current_analysis_id,
+                        career_recommendations=parsed
+                    )
+            except Exception as e:
+                st.error("⚠️ Something went wrong generating recommendations. Please try again.")
+                with st.expander("Technical details (for debugging)"):
+                    st.code(str(e))
+                    st.text(raw_response)
+
+        except RuntimeError as e:
+            st.error(f"⚠️ {str(e)}")
+            st.info("Please try again in a moment.")
 
 if "current_career_recommendations" in st.session_state:
     rec = st.session_state.current_career_recommendations

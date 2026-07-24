@@ -4,12 +4,13 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "utils"))
 
-from utils.auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 from utils.report_generator import generate_report
 
 st.set_page_config(page_title="Full Report - HireSense AI", page_icon="📄")
 
 require_login()
+render_sidebar_reset_button()
 
 st.title("📄 Generate Full Report")
 st.write(

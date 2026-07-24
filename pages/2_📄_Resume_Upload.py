@@ -9,12 +9,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml_models"))
 
 from database.db_utils import save_resume, get_resumes_for_user
 from utils.text_extraction import extract_text
-from utils.auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 from ml_models.resume_parser import parse_resume
 
 st.set_page_config(page_title="Resume Upload - HireSense AI", page_icon="📄")
 
 require_login()
+render_sidebar_reset_button()
 
 st.title("📄 Upload Your Resume")
 st.write("Upload a PDF or DOCX resume to get started with analysis.")

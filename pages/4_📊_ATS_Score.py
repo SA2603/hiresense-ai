@@ -7,13 +7,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml_models"))
 
 from database.db_utils import save_analysis
 from ml_models.ats_scorer import calculate_ats_score
-from utils.auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 from utils.chart_helpers import make_gauge_chart, make_breakdown_bar_chart
 
 st.set_page_config(page_title="ATS Score - HireSense AI", page_icon="📊")
 
 require_login()
-
+render_sidebar_reset_button()
 st.title("📊 ATS Score Analysis")
 
 # This page depends on a resume already being uploaded in this session

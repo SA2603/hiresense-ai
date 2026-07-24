@@ -8,12 +8,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ml_models"))
 
 from database.db_utils import update_analysis
 from ml_models.skill_gap import analyze_skill_gap, recommend_skills_to_learn
-from utils.auth_guard import require_login
+from auth_guard import require_login, render_sidebar_reset_button
 
 st.set_page_config(page_title="Skill Gap Analysis - HireSense AI", page_icon="🎯")
 
 require_login()
-
+render_sidebar_reset_button()
 st.title("🎯 Skill Gap Analysis")
 st.write("Compare your resume's skills against a specific job description.")
 
