@@ -1,4 +1,6 @@
 import streamlit as st
+import json
+import re
 from groq import Groq
 
 # Initialize the client once - reused across all calls in this module
@@ -65,3 +67,26 @@ def parse_structured_review(review_text: str) -> dict:
 
     # Clean up trailing whitespace on each section
     return {key: value.strip() for key, value in sections.items()}
+
+def parse_json_response(raw_response: str) -> dict:
+    """
+    Defensively parses a JSON response from the LLM, handling common
+    formatting quirks:
+    - Strips markdown code fences (```json ... ``` or ``` ... ```) if present
+    - Strips leading/trailing whitespace or stray text outside the JSON braces
+    Raises json.JSONDecodeError if the result still isn't valid JSON after cleanup.
+    """
+    cleaned = raw_response.strip()
+
+    # Remove markdown code fences if the model added them despite instructions
+    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
+
+    # If there's stray text before/after the JSON object, try to isolate
+    # the outermost { ... } block
+    first_brace = cleaned.find("{")
+    last_brace = cleaned.rfind("}")
+    if first_brace != -1 and last_brace != -1:
+        cleaned = cleaned[first_brace:last_brace + 1]
+
+    return json.loads(cleaned)  # will raise json.JSONDecodeError if still invalid
