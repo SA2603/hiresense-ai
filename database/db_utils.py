@@ -211,3 +211,27 @@ def get_analyses_for_user(user_id: int) -> list:
     ).fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def get_full_analysis_history(user_id: int) -> list:
+    """
+    Returns all analyses for a user, joined with resume filename and JD
+    company/role info, so the dashboard can show meaningful history labels
+    instead of just raw IDs.
+    """
+    conn = get_connection()
+    rows = conn.execute(
+        """
+        SELECT
+            a.analysis_id, a.ats_score, a.similarity_score, a.created_at,
+            r.filename AS resume_filename,
+            jd.company_name, jd.role_title
+        FROM analyses a
+        LEFT JOIN resumes r ON a.resume_id = r.resume_id
+        LEFT JOIN job_descriptions jd ON a.jd_id = jd.jd_id
+        WHERE a.user_id = ?
+        ORDER BY a.created_at DESC
+        """,
+        (user_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]

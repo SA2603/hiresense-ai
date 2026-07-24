@@ -48,26 +48,26 @@ if st.button("🧬 Calculate Similarity"):
 if "current_similarity_score" in st.session_state:
     similarity = st.session_state.current_similarity_score
 
- fig_gauge = make_gauge_chart(similarity, "Semantic Similarity", suffix="%", thresholds=(45, 70))
-    st.plotly_chart(fig_gauge, use_container_width=True)
+fig_gauge = make_gauge_chart(similarity, "Semantic Similarity", suffix="%", thresholds=(45, 70))
+st.plotly_chart(fig_gauge, use_container_width=True)
 
-    if similarity >= 70:
+if similarity >= 70:
         st.success(
             "✅ Strong semantic alignment — your resume's overall content and "
             "experience closely match what this role is asking for."
         )
-    elif similarity >= 45:
+elif similarity >= 45:
         st.warning(
             "⚠️ Moderate alignment — there's meaningful overlap, but consider "
             "tailoring your resume's language more closely to this role."
         )
-    else:
+else:
         st.error(
             "❌ Low alignment — your resume's content may not be well-suited "
             "for this specific role, or needs significant tailoring."
         )
 
-    with st.expander("ℹ️ How is this different from the Skill Gap score?"):
+with st.expander("ℹ️ How is this different from the Skill Gap score?"):
         st.write("""
         - **Skill Gap Analysis** (previous page) compares **exact skill keywords**
           — e.g., does your resume literally contain the word "Python"?
